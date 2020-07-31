@@ -1,0 +1,35 @@
+@import "../../config/globals";
+
+.chat-add {
+  height: 64px;
+  @include clearfix();
+}
+
+.chat-add_input-w {
+  overflow: hidden;
+}
+
+.chat-add_input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: $fs_xx-large;
+  height: 64px;
+  padding: $offset_4x;
+  border: 0;
+  outline: 0;
+  font-weight: 300;
+  color: $c-gray;
+
+  @include placeholder() {
+    color: $c-ultra-light;
+    font-style: italic;
+  }
+}
+
+.chat-add-contact-list {
+  display: block;
+}
+
+.chat-add-contact-list.__hidden {
+  display: none;
+}

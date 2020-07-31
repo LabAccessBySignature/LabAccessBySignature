@@ -1,0 +1,13 @@
+@import "config/globals";
+
+body {
+    background: $c-main-bg;
+    }
+
+.main-wrapper {
+    max-width: $main-wrapper-width;
+    min-width: $main-wrapper-min-width;
+    margin: 0 auto;
+    display: flex;
+    align-self: center;
+    }

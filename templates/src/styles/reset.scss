@@ -1,0 +1,42 @@
+/* Reset.css
+---------------------------------------------------------------------------------- */
+
+@import "config/globals";
+
+html, body { font-size: $fs_normal; }
+
+textarea,
+input,
+select {
+    font-size: $fs_normal;
+    }
+
+body, table, td, ul, menu, li, div, span, img, a, form, p, h1 {
+    margin: 0;
+    padding: 0;
+    }
+
+body, textarea, input, select, button {
+    color: $c-gray-dark;
+    font-family: $font-main;
+    }
+
+body { background: $c-white; }
+
+
+ul, menu { list-style: none; }
+
+img { border: 0; }
+
+table {
+    border-collapse: collapse;
+    border-width: 0;
+    }
+
+a {
+    cursor: pointer;
+    color: $c-gray-dark;
+    }
+
+/* /Reset.css
+---------------------------------------------------------------------------------- */

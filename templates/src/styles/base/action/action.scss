@@ -1,0 +1,16 @@
+@import "../../config/globals";
+
+
+.action {
+    position: relative;
+    display: inline-block;
+    }
+
+    .action_target {
+        position: absolute;
+        @include absolute-full();
+        }
+        button.action_target, input.action_target {
+            @include reset-input();
+            opacity: 0;
+            }

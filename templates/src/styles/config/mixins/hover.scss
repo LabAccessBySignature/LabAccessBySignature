@@ -1,0 +1,11 @@
+@mixin not-hovered() {
+    .hover & {
+        @content
+        }
+    }
+
+@mixin hover() {
+    .hover &:hover {
+        @content
+        }
+    }

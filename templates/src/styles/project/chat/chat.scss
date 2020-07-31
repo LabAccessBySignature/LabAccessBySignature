@@ -1,0 +1,71 @@
+@import "../../config/globals";
+
+$chat-height: 800px;
+
+.chat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: $chat-height;
+}
+
+.chat_name {
+  display: flex;
+  font-size: $fs_xx-large;
+  color: $c-title;
+  margin: $offset_2x $offset_8x;
+  @include clearfix();
+}
+
+.chat_message-input-w {
+  overflow: hidden;
+  margin: $offset;
+}
+
+.chat_message-text {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: $fs_xx-large;
+  height: 64px;
+  padding: $offset_4x;
+  border: 0;
+  outline: 0;
+  font-weight: 300;
+  color: $c-gray;
+
+  @include placeholder() {
+    color: $c-ultra-light;
+    font-style: italic;
+  }
+}
+
+.chat_files-to-choose {
+  margin: $offset;
+  overflow: auto;
+}
+
+.chat_files-to-choose.__hidden {
+  display: none;
+}
+
+.file-to-choose_id {
+  display: none;
+}
+
+.file-to-choose {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: $fs_normal;
+  height: 32px;
+  padding: $offset_4x;
+  border: 0;
+  outline: 0;
+  font-weight: 300;
+  color: $c-gray;
+}
+
+.js-chat_message-list {
+  flex: 1;
+  overflow: auto;
+  margin: $offset;
+}

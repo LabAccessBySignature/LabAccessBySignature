@@ -1,0 +1,45 @@
+@import "../../config/globals";
+
+.lab-enter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: $offset_10x;
+}
+
+.file-input {
+  width:.1px;
+  height:.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.file-input-label {
+  cursor: pointer;
+  font-size: 1.25em;
+  font-weight: 700;
+  display: inline-block;
+
+  @include hover {
+    font-color:  $c-active-border;
+  }
+  margin: $offset_2x;
+  @include clearfix();
+}
+
+.lab-enter_button {
+  background-color: $c-green;
+  font-size: $fs_xx-large;
+  color: white;
+  padding: 14px 30px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-self: center;
+}

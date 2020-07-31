@@ -1,0 +1,23 @@
+@import "../../config/globals";
+
+
+.filter {
+    font-family: $font-main;
+    font-size: $fs_little;
+    line-height: $lh_little;
+    background: none;
+    outline: none;
+    padding: $offset_half $offset_2x;
+    border-radius: $offset;
+    font-weight: 200;
+    border: 0;
+    box-sizing: border-box;
+    }
+    .filter.__active {
+        border: 1px solid $c-micro-elements;
+        padding-top: ($offset_half - 1px);
+        padding-bottom: ($offset_half - 1px);
+        padding-left: ($offset_2x - 1px);
+        padding-right: ($offset_2x - 1px);
+        }
+

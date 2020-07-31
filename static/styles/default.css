@@ -1,0 +1,254 @@
+/* Reset.css
+---------------------------------------------------------------------------------- */
+
+html,
+body {
+  font-size: 15px;
+}
+
+textarea,
+input,
+select {
+  font-size: 15px;
+}
+
+body,
+table,
+td,
+ul,
+menu,
+li,
+div,
+span,
+img,
+a,
+form,
+p,
+h1 {
+  margin: 0;
+  padding: 0;
+}
+
+body,
+textarea,
+input,
+select,
+button {
+  color: #333;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: #fff;
+}
+
+ul,
+menu {
+  list-style: none;
+}
+
+img {
+  border: 0;
+}
+
+table {
+  border-collapse: collapse;
+  border-width: 0;
+}
+
+a {
+  cursor: pointer;
+  color: #333;
+}
+
+/* /Reset.css
+---------------------------------------------------------------------------------- */
+
+body {
+  background: #f5f5f5;
+}
+
+.main-wrapper {
+  max-width: 800px;
+  min-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  align-self: center;
+}
+
+.action {
+  position: relative;
+  display: inline-block;
+}
+
+.action_target {
+  position: absolute;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+button.action_target,
+input.action_target {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  opacity: 0;
+}
+
+.input-checkbox {
+  display: inline-block;
+  position: relative;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.input-checkbox_target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  z-index: 1;
+}
+
+.input-checkbox_visual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  transition: border-color 0.2s;
+}
+
+.input-checkbox_target:checked ~ .input-checkbox_visual {
+  border-color: #5dc2af;
+}
+
+.input-checkbox_visual_icon {
+  position: absolute;
+  width: 19px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin: -9px -9px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.input-checkbox_target:checked ~ .input-checkbox_visual .input-checkbox_visual_icon {
+  opacity: 1;
+}
+
+.input-checkbox_visual_icon:before,
+.input-checkbox_visual_icon:after {
+  content: '';
+  position: absolute;
+}
+
+.input-checkbox_visual_icon:before {
+  width: 11px;
+  height: 2px;
+  background: #5dc2af;
+  top: 13px;
+  left: 0;
+  transform: rotate(45deg);
+}
+
+.input-checkbox_visual_icon:after {
+  width: 19px;
+  height: 2px;
+  background: #5dc2af;
+  top: 8px;
+  left: 3px;
+  transform: rotate(-65deg);
+}
+
+.filter {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 18px;
+  background: none;
+  outline: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 200;
+  border: 0;
+  box-sizing: border-box;
+}
+
+.filter.__active {
+  border: 1px solid #ebdfdf;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+.lab-enter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 40px;
+}
+
+.file-input {
+  width: .1px;
+  height: .1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.file-input-label {
+  cursor: pointer;
+  font-size: 1.25em;
+  font-weight: 700;
+  display: inline-block;
+  margin: 8px;
+}
+
+.hover .file-input-label:hover {
+  font-color: #7fff90;
+}
+
+.file-input-label:before,
+.file-input-label:after {
+  content: '';
+  display: table;
+}
+
+.file-input-label:after {
+  clear: both;
+}
+
+.lab-enter_button {
+  background-color: #7fff90;
+  font-size: 24px;
+  color: white;
+  padding: 14px 30px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-self: center;
+}
+/*# sourceMappingURL=default.css.map */

@@ -1,0 +1,25 @@
+@mixin reset-input() {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    outline: none;
+    }
+
+@mixin placeholder() {
+    &::-webkit-input-placeholder {
+        @content
+        }
+
+    &:-moz-placeholder {
+        @content
+        }
+
+    &::-moz-placeholder {
+        @content
+        }
+
+    &:-ms-input-placeholder {
+        @content
+        }
+    }

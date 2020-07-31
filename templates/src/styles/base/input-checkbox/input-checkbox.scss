@@ -1,0 +1,73 @@
+@import "../../config/globals";
+
+
+$checkbox-size: 36px;
+
+$c-checkbox-active: #5dc2af;
+$c-checkbox-animation-time: .2s;
+
+
+.input-checkbox {
+    display: inline-block;
+    position: relative;
+    width: $checkbox-size;
+    min-width: $checkbox-size;
+    height: $checkbox-size;
+    }
+
+    .input-checkbox_target {
+        @include absolute-full();
+        @include reset-input();
+        opacity: 0;
+        z-index: 1;
+        }
+
+    .input-checkbox_visual {
+        @include absolute-full();
+        border-radius: $checkbox-size / 2;
+        box-sizing: border-box;
+        border: 1px solid $c-ultra-light;
+        transition: border-color $c-checkbox-animation-time;
+        }
+        .input-checkbox_target:checked ~ .input-checkbox_visual {
+            border-color: $c-checkbox-active;
+            }
+
+        .input-checkbox_visual_icon {
+            position: absolute;
+            width: 19px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin: -9px -9px;
+            opacity: 0;
+            transition: opacity $c-checkbox-animation-time;
+            }
+            .input-checkbox_target:checked ~ .input-checkbox_visual .input-checkbox_visual_icon {
+                opacity: 1;
+                }
+            .input-checkbox_visual_icon:before,
+            .input-checkbox_visual_icon:after {
+                content: '';
+                position: absolute;
+                }
+
+            .input-checkbox_visual_icon:before {
+                width: 11px;
+                height: 2px;
+                background: $c-checkbox-active;
+
+                top: 13px;
+                left: 0;
+                transform: rotate(45deg);
+                }
+
+            .input-checkbox_visual_icon:after {
+                width: 19px;
+                height: 2px;
+                background: $c-checkbox-active;
+
+                top: 8px;
+                left: 3px;
+                transform: rotate(-65deg);
+                }
