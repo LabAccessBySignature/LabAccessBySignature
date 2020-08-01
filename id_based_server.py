@@ -3,7 +3,7 @@ from sage.all import *
 
 from braid_group import BraidSignGroup
 import logging, hashlib, random, argparse, requests
-import config
+import config, json
 CLIENT = "http://127.0.0.1:5080"
 LAB_SERVER = "http://127.0.0.1:5082"
 
@@ -49,7 +49,11 @@ def secret_knowledge():
         b = session[email]['secret_knowledge']['b']
         r = session[email]['secret_knowledge']['r']
         y = session[email]['secret_knowledge']['y']
-        result = (r == 0 and c == y) | (r == 1 and c == b)
+        db.execute('select secret from credentials where email=?;', (email,))
+        z = bsg.hash1(str(db.fetchone()[0]))
+        x = bsg.deserializeBraid(config.x)
+
+        result = ((r == 0 and c == y) | (r == 1 and c == b)) and y == z * x / z
         if result:
             db.execute('insert into auth (email) values (?)', (email, ))
             db.connection.commit()
@@ -75,12 +79,10 @@ def init_master_key():
     db.execute('insert or replace into params values (?, ?)', ('master_key', str(mk)))
 
 def create_polynomial(t):
-    print('t = ', t)
     R, x = PolynomialRing(GF(config.p), 'x').objgen()
     f = R.random_element(t - 1)
     db.execute('select value from params where key = ?', ('secret',))
     S = int(db.fetchone()[0])
-    print(S)
     f = f - f % x + S
     return f
 from base64 import b64encode as b64
@@ -127,13 +129,18 @@ def generate_keys(emails_list_path):
     init_secret()
     init_master_key()
     f = create_polynomial(ceil(len(emails) * 0.6))
-    print(f)
     for e in emails:
         p = config.p
         h = hash(e) % p if hash(e) % p != 0 else 1
         key = f(h)
-        print(h, key)
         db.execute('insert or replace into credentials values (?, ?)', (e, str(int(key))))
+
+        with open(f'certs/{e}.json', 'w') as c_f:
+            json.dump({
+                'email': e,
+                'key': bsg.serializeBraid(bsg.hash1(str(key)))
+            }, c_f)
+            
     db.connection.commit()
 
 if __name__ == "__main__":
