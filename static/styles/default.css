@@ -73,6 +73,7 @@ body {
   min-width: 700px;
   margin: 0 auto;
   display: flex;
+  flex-direction: column;
   align-self: center;
 }
 
@@ -250,5 +251,36 @@ input.action_target {
   width: 100%;
   display: flex;
   align-self: center;
+}
+
+.log-item {
+  border: 2px solid #7fff90;
+  border-radius: 8px 8px 8px 8px;
+  display: flex;
+  flex-direction: row;
+  width: 700px;
+  margin: 16px;
+}
+
+.log-item > div {
+  margin: 8px;
+  padding: 8px 36px;
+  background-color: #ddd;
+  border-radius: 8px 8px 8px 8px;
+  width: max-content;
+}
+
+.log-item_email {
+  flex-grow: 4;
+  text-align: center;
+}
+
+.access-log {
+  margin: 40px;
+}
+
+.key_accepted_counter {
+  margin: 40px;
+  font-size: 28px;
 }
 /*# sourceMappingURL=default.css.map */

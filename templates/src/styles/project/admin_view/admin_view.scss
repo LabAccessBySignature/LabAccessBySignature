@@ -1,0 +1,30 @@
+.log-item {
+  border: $offset_half solid $c-green;
+  border-radius: $offset_2x $offset_2x $offset_2x $offset_2x;
+  display: flex;
+  flex-direction: row;
+  width: 700px;
+  margin: $offset_4x;
+}
+
+.log-item > div {
+  margin: $offset_2x;
+  padding: $offset_2x $offset_9x;
+  background-color: $c-gray-light;
+  border-radius: $offset_2x $offset_2x $offset_2x $offset_2x;
+  width: max-content;
+}
+
+.log-item_email {
+    flex-grow:4;
+    text-align: center;
+}
+
+.access-log {
+  margin: $offset_10x;
+}
+
+.key_accepted_counter {
+  margin: $offset_10x;
+  font-size: $lh_xx-large;
+}

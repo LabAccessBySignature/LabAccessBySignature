@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles/default.css')}}"/>
+    <title>Server</title>
+</head>
+<script type="text/html" id="logItemTemplate">
+    <div class="log-item">
+        <div class="log-item_time js-log-item_time"></div>
+        <div class="log-item_email js-log-item_email"></div>
+        <div class="log-item_result js-log-item_result"></div>
+    </div>
+</script>
+<body>
+    <div class="main-wrapper">
+        <div class="key_accepted_counter js-key_accepted_counter">Key accepted number: {{accessed_accounts}}</div>
+        <div class="access_log js-access_log">
+            {% for e in last_elements%}
+                <div class="log-item">
+                    <div class="log-item_time js-log-item_time">{{e.time}}</div>
+                    <div class="log-item_email js-log-item_email">{{e.email}}</div>
+                    <div class="log-item_result js-log-item_result">Access granted</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    function getTemplateRootNode(scriptId) {
+        var scriptTag = document.getElementById(scriptId);
+        var div = document.createElement('div');
+        div.innerHTML = scriptTag.innerHTML;
+        var result = div.children[0];
+        div.removeChild(result);
+        return result;
+    }
+    var socket = io();
+    socket.on('new_access_request', function(msg) {
+        var root = getTemplateRootNode('logItemTemplate');
+        var time = root.querySelector('.js-log-item_time');
+        var email = root.querySelector('.js-log-item_email');
+        var result = root.querySelector('.js-log-item_result');
+
+        time.innerHTML = new Date().toLocaleString('ru-RU', {'formatMatcher': 'basic'}).replaceAll('.', '-').replaceAll(',', '');
+        email.innerHTML = msg.email;
+        result.innerHTML = msg.result ? 'Access granted' : 'Access denied';
+
+        document.querySelector('.js-access_log').appendChild(root)
+
+    });
+    socket.on('accessed_accounts_number', function(msg) {
+        document.querySelector('.js-key_accepted_counter').innerHTML = 'Key accepted number: ' + msg.accessed_accounts;
+    });
+</script>
+</html>

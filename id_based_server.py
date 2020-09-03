@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 from sage.all import *
+from threading import Thread
+from time import sleep
 
 from braid_group import BraidSignGroup
 import logging, hashlib, random, argparse, requests
@@ -9,9 +12,9 @@ LAB_SERVER = "http://127.0.0.1:5082"
 
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+socketio = SocketIO(app)
 
 import sqlite3
-db = sqlite3.connect('db.sqlite').cursor()
 bsg = BraidSignGroup(config.braid['n'], config.braid['p'], config.braid['l'])
 
 session = {}
@@ -21,10 +24,16 @@ def init_session(email):
 
 @app.route('/',  methods=['GET'])
 def index():
-    return render_template('public/server.html')
+    db = sqlite3.connect('db.sqlite').cursor()
+    db.execute('select current_timestamp, email from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+    last_elements = [{'time': r[0], 'email': r[1]} for r in db.fetchall()]
+    db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+    accessed_accounts = db.fetchone()[0]
+    return render_template('public/id_based_server.html', last_elements=last_elements, accessed_accounts=accessed_accounts)
 
 @app.route('/secret_knowledge',  methods=['POST'])
 def secret_knowledge():
+    db = sqlite3.connect('db.sqlite').cursor()
     j = request.json
     if j['action'] == 'open_key':
         email = j['email']
@@ -60,6 +69,7 @@ def secret_knowledge():
             db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
             if db.fetchone()[0] >= config.threshold:
                 try_access()
+        socketio.emit('new_access_request', {'email': email, 'result': result})
 
         return jsonify({'action': 'result', 'result': result})
 
@@ -143,6 +153,15 @@ def generate_keys(emails_list_path):
             
     db.connection.commit()
 
+def stat_info_reporter():
+    db = sqlite3.connect('db.sqlite').cursor()
+    while True:
+        db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+        accessed_accounts = db.fetchone()[0]
+        socketio.emit('accessed_accounts_number', {'accessed_accounts': accessed_accounts})
+        sleep(0.5)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--command", help="command")
@@ -154,4 +173,7 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging.INFO,
             format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-        app.run(port=5080)
+        info_thread = Thread(None, stat_info_reporter, 'stat_info_reporter')
+        info_thread.start()
+        socketio.run(app, port=5080)
+        info_thread.stop()
