@@ -2,14 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles/default.css')}}"/>
     <title>Server</title>
 </head>
 <body>
-    {% if open %}
-      <h1>OPEN</h1>
-    {% else %}
-      <h1>CLOSE</h1>
-    {% endif %}
+    <div class="main-wrapper">
+        {% if open %}
+          <h1 class="lab-server-status">OPEN</h1>
+        {% else %}
+          <h1 class="lab-server-status">CLOSE</h1>
+        {% endif %}
+    </div>
 
 </body>
 </html>

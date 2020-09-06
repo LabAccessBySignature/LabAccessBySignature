@@ -7,12 +7,8 @@ import config
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-bsg = bsg = BraidSignGroup(config.braid['n'], config.braid['p'], config.braid['l'])
+bsg = BraidSignGroup(config.braid['n'], config.braid['p'], config.braid['l'])
 session = {}
-
-def init_session(email):
-    if email not in session:
-        session[email] = {'secret_knowledge': {}}
 
 @app.route('/',  methods=['GET'])
 def index():
@@ -35,4 +31,5 @@ def verify():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
         format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    session['last_open'] = datetime.datetime.now() - datetime.timedelta(days = 365)
     app.run(port=5082)
