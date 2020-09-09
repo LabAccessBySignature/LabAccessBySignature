@@ -35,34 +35,30 @@ def index():
 def secret_knowledge():
     db = sqlite3.connect('db.sqlite').cursor()
     j = request.json
-    if j['action'] == 'open_key':
+    if j['action'] == 'init':
         email = j['email']
-        x = bsg.deserializeBraid(config.x)
-        y = bsg.deserializeBraid(j['y'])
-        a = bsg.randLBElement()
+        a = bsg.deserializeBraid(j['a'])
+        b = bsg.deserializeBraid(j['b'])
 
         init_session(email)
-        session[email]['secret_knowledge']['y'] = y
         session[email]['secret_knowledge']['a'] = a
-        return jsonify({'action': 'multiplier', 'a': bsg.serializeBraid(a)})
-    if j['action'] == 'b':
-        email = j['email']
-        b = bsg.deserializeBraid(j['b'])
-        r = random.randint(0, 1)
         session[email]['secret_knowledge']['b'] = b
+
+        r = random.randint(0, 1)
         session[email]['secret_knowledge']['r'] = r
-        return jsonify({'action': 'random', 'r': str(r)})
+        return jsonify({'action': 'multiplier', 'r': str(r)})
     if j['action'] == 'prove':
         email = j['email']
         c = bsg.deserializeBraid(j['c'])
+        a = session[email]['secret_knowledge']['a']
         b = session[email]['secret_knowledge']['b']
         r = session[email]['secret_knowledge']['r']
-        y = session[email]['secret_knowledge']['y']
-        db.execute('select secret from credentials where email=?;', (email,))
-        z = bsg.hash1(str(db.fetchone()[0]))
-        x = bsg.deserializeBraid(config.x)
+        db.execute('select open_key_x, open_key_y from credentials where email=?;', (email,))
+        x, y = db.fetchone()
+        x = bsg.deserializeBraid(x)
+        y = bsg.deserializeBraid(y)
 
-        result = ((r == 0 and c == y) | (r == 1 and c == b)) and y == z * x / z
+        result = (((c/b).is_conjugated(x**r)) | ((y**(-r)*c).is_conjugated(a)))
         if result:
             db.execute('insert into auth (email) values (?)', (email, ))
             db.connection.commit()
@@ -102,7 +98,7 @@ from base64 import b64encode as b64
 def try_access():
     db = sqlite3.connect('db.sqlite').cursor()
     db.execute('''select
-    c.email, secret
+    c.email, secret_key
     from credentials c
     inner
     join(select
@@ -148,18 +144,27 @@ def generate_keys(emails_list_path):
         p = config.p
         h = hash(e) % p if hash(e) % p != 0 else 1
         key = f(h)
-        db.execute('insert or replace into credentials values (?, ?)', (e, str(int(key))))
+        key_hash = bsg.hash1(str(key))
+        x = bsg.randLBlElement()
+        y = key_hash * x / key_hash
+        key_hash = bsg.serializeBraid(key_hash)
+        x = bsg.serializeBraid(x)
+        y = bsg.serializeBraid(y)
+        db.execute('insert or replace into credentials values (?, ?, ?, ?)', (e, int(key), x, y))
 
         with open(f'certs/{e}.json', 'w') as c_f:
             json.dump({
                 'email': e,
-                'key': bsg.serializeBraid(bsg.hash1(str(key)))
+                'secrete_key': key_hash,
+                'open_key': {
+                    'x': x,
+                    'y': y
+                }
             }, c_f)
             
     db.connection.commit()
 
 def stat_info_reporter():
-    db = sqlite3.connect('db.sqlite').cursor()
     db = sqlite3.connect('db.sqlite').cursor()
     while True:
         db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')

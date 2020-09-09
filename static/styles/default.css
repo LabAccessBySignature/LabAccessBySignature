@@ -253,6 +253,19 @@ input.action_target {
   align-self: center;
 }
 
+.lab-enter_result {
+  margin: 40px;
+  font-size: 28px;
+}
+
+.lab-enter_result-ok {
+  color: #7fff90;
+}
+
+.lab-enter_result-fail {
+  color: #ff5756;
+}
+
 .log-item {
   border: 2px solid #7fff90;
   border-radius: 8px 8px 8px 8px;

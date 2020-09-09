@@ -15,6 +15,13 @@
                 <label for="file-input" class="file-input-label js-file-input-label">Выберите сертификат</label>
                 <button class="lab-enter_button" aria-label="Войти в лабораторию">Войти в лабораторию</button>
             </form>
+            {% if result is not none %}
+                {% if result %}
+                    <div class="lab-enter_result lab-enter_result-ok">Access granted</div>
+                {% else %}
+                    <div class="lab-enter_result lab-enter_result-fail">Access denied</div>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 

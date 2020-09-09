@@ -43,3 +43,18 @@
   display: flex;
   align-self: center;
 }
+
+.lab-enter_result {
+    margin: $offset_10x;
+    font-size: $lh_xx-large;
+}
+
+.lab-enter_result-ok {
+    color: $c-green;
+}
+
+.lab-enter_result-fail {
+    color: $c-error;
+}
+
+
