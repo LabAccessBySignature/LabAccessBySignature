@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit
 from sage.all import *
 from threading import Thread
 from time import sleep
+import traceback
 
 from braid_group import BraidSignGroup
 import logging, hashlib, random, argparse, requests
@@ -64,7 +65,7 @@ def secret_knowledge():
             db.connection.commit()
             db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
             if db.fetchone()[0] >= config.threshold:
-                try_access()
+                result = try_access()
         socketio.emit('new_access_request', {'email': email, 'result': result})
 
         return jsonify({'action': 'result', 'result': result})
@@ -79,67 +80,84 @@ def init_secret():
     S = random.randint(1, 19)
     db = sqlite3.connect('db.sqlite').cursor()
     db.execute('insert or replace into params values (?, ?)', ('secret', str(S)))
+    db.connection.commit()
+    return S
 
 def init_master_key():
     mk = bsg.randLBElement()
-    mk = bsg.serializeBraid(mk)
     db = sqlite3.connect('db.sqlite').cursor()
-    db.execute('insert or replace into params values (?, ?)', ('master_key', str(mk)))
+    db.execute('insert or replace into params values (?, ?)', ('master_key', bsg.serializeBraid(mk)))
+    db.connection.commit()
+    return mk
 
-def create_polynomial(t):
+def init_open_keys(mk, s):
+    x = bsg.randLBElement()
+    mks = mk**s
+    y = mks * x / mks
+    with open(f'certs/lab_cert.json', 'w') as c_f:
+        json.dump({
+            'open_key': {
+                'x': bsg.serializeBraid(x),
+                'y': bsg.serializeBraid(y)
+            }}, c_f)
+
+
+def create_polynomial(t, S):
     R, x = PolynomialRing(GF(config.p), 'x').objgen()
     f = R.random_element(t - 1)
-    db = sqlite3.connect('db.sqlite').cursor()
-    db.execute('select value from params where key = ?', ('secret',))
-    S = int(db.fetchone()[0])
     f = f - f % x + S
     return f
 from base64 import b64encode as b64
 def try_access():
-    db = sqlite3.connect('db.sqlite').cursor()
-    db.execute('''select
-    c.email, secret_key
-    from credentials c
-    inner
-    join(select
-    distinct(email)
-    from auth where
-    current_timestamp < datetime(timestamp, "+60 minutes")) as a
-    on
-    a.email = c.email;''')
-    emails, secrets = zip(*[(x[0], x[1]) for x in db.fetchall()])
-    db.execute('select value from params where key = ?', ('secret',))
-    S_real = db.fetchone()[0]
-    db.execute('select value from params where key = ?', ('master_key',))
-    mk = db.fetchone()[0]
-    mk = bsg.deserializeBraid(mk)
-    p = config.p
-    hashes = [hash(e) % p if hash(e) % p != 0 else 1 for e in emails]
-    points = list(zip(hashes, secrets))
-    print(points)
-    R, x = PolynomialRing(GF(p), 'x').objgen()
-    f = R.lagrange_polynomial(points)
-    S = f%x
-    print(f, S, S_real)
-    assert(S == int(S_real))
+    try:
+        db = sqlite3.connect('db.sqlite').cursor()
+        db.execute('''select
+        c.email, secret_key
+        from credentials c
+        inner
+        join(select
+        distinct(email)
+        from auth where
+        current_timestamp < datetime(timestamp, "+60 minutes")) as a
+        on
+        a.email = c.email;''')
+        emails, secrets = zip(*[(x[0], int(x[1])) for x in db.fetchall()])
+        db.execute('select value from params where key = ?', ('secret',))
+        S_real = db.fetchone()[0]
+        db.execute('select value from params where key = ?', ('master_key',))
+        mk = db.fetchone()[0]
+        mk = bsg.deserializeBraid(mk)
+        p = config.p
+        hashes = [hash(e) % p if hash(e) % p != 0 else 1 for e in emails]
+        points = list(zip(hashes, secrets))
+        R, x = PolynomialRing(GF(p), 'x').objgen()
+        f = R.lagrange_polynomial(points)
+        S = f%x
+        if S != int(S_real):
+            return False
 
-    sign_k = mk ** int(S)
+        sign_k = mk ** int(S)
 
-    r = requests.get(f"{LAB_SERVER}/auth")
-    msg = r.json()['msg']
-    msg_h = bsg.hash1(msg)
-    print(msg_h)
+        r = requests.get(f"{LAB_SERVER}/auth")
+        msg = r.json()['msg']
+        msg_h = bsg.hash1(msg)
 
-    sign = bsg.serializeBraid(sign_k * msg_h / sign_k)
-    requests.post(f"{LAB_SERVER}/auth", json={'msg': msg, 'sign': sign, 'emails': emails})
+        sign = bsg.serializeBraid(sign_k * msg_h / sign_k)
+        resp = requests.post(f"{LAB_SERVER}/auth", json={'msg': msg, 'sign': sign, 'emails': emails})
+        result = resp.json()['result'] == 'True'
+        return result
+    except:
+        traceback.print_exc()
+        return False
 
 def generate_keys(emails_list_path):
     db = sqlite3.connect('db.sqlite').cursor()
     with open(emails_list_path, 'r') as f:
         emails = [x[:-1] for x in f.readlines()]
-    init_secret()
-    init_master_key()
-    f = create_polynomial(ceil(len(emails) * 0.6))
+    S = init_secret()
+    mk = init_master_key()
+    init_open_keys(mk, S)
+    f = create_polynomial(ceil(len(emails) * 0.6), S)
     for e in emails:
         p = config.p
         h = hash(e) % p if hash(e) % p != 0 else 1
@@ -150,7 +168,7 @@ def generate_keys(emails_list_path):
         key_hash = bsg.serializeBraid(key_hash)
         x = bsg.serializeBraid(x)
         y = bsg.serializeBraid(y)
-        db.execute('insert or replace into credentials values (?, ?, ?, ?)', (e, int(key), x, y))
+        db.execute('insert or replace into credentials values (?, ?, ?, ?)', (e, str(int(key)), x, y))
 
         with open(f'certs/{e}.json', 'w') as c_f:
             json.dump({

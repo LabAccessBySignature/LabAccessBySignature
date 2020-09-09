@@ -13,7 +13,7 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 @app.route('/',  methods=['GET'])
 def index():
     if 'result' in request.args:
-        result = bool(request.args['result'])
+        result = request.args['result'] == 'True'
     else:
         result = None
     return render_template('public/client.html', result=result)

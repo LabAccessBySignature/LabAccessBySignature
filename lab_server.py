@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 
 from braid_group import BraidSignGroup
 import logging, datetime, random, string
-import config
+import config, json, traceback
 
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
@@ -21,11 +21,24 @@ def verify():
         msg = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
         return jsonify({'msg': msg})
     else:
-        j = request.json
-        sign = bsg.deserializeBraid(j['sign'])
-        msg = j['msg']
-        if sign.is_conjugated(bsg.hash1(msg)):
-            session['last_open'] = datetime.datetime.now()
+        try:
+            j = request.json
+            sign = bsg.deserializeBraid(j['sign'])
+            msg = j['msg']
+            msg_hash = bsg.hash1(msg)
+            with open('certs/lab_cert.json') as f:
+                cert = json.load(f)
+            x = bsg.deserializeBraid(cert['open_key']['x'])
+            y = bsg.deserializeBraid(cert['open_key']['y'])
+            if sign.is_conjugated(msg_hash) and (y * sign).is_conjugated(x * msg_hash):
+                session['last_open'] = datetime.datetime.now()
+                return jsonify({'result': 'True'})
+            else:
+                return jsonify({'result': 'False'})
+        except:
+            traceback.print_exc()
+            return jsonify({'result': 'False'})
+
 
 
 if __name__ == "__main__":
