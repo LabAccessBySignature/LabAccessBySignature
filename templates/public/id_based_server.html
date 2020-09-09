@@ -21,7 +21,11 @@
                 <div class="log-item">
                     <div class="log-item_time js-log-item_time">{{e.time}}</div>
                     <div class="log-item_email js-log-item_email">{{e.email}}</div>
-                    <div class="log-item_result js-log-item_result">Access granted</div>
+                    {% if e.result == 'True' %}
+                        <div class="log-item_result js-log-item_result">Access granted</div>
+                    {% else %}
+                        <div class="log-item_result js-log-item_result">Access denied</div>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>

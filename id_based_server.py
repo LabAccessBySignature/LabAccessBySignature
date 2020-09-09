@@ -26,9 +26,9 @@ def init_session(email):
 @app.route('/',  methods=['GET'])
 def index():
     db = sqlite3.connect('db.sqlite').cursor()
-    db.execute('select current_timestamp, email from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
-    last_elements = [{'time': r[0], 'email': r[1]} for r in db.fetchall()]
-    db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+    db.execute('select current_timestamp, email, result from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+    last_elements = [{'time': r[0], 'email': r[1], 'result': r[2]} for r in db.fetchall()]
+    db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes") and result="True";')
     accessed_accounts = db.fetchone()[0]
     return render_template('public/id_based_server.html', last_elements=last_elements, accessed_accounts=accessed_accounts)
 
@@ -45,7 +45,7 @@ def secret_knowledge():
         session[email]['secret_knowledge']['a'] = a
         session[email]['secret_knowledge']['b'] = b
 
-        r = random.randint(0, 1)
+        r = random.randint(config.r['min'], config.r['max'])
         session[email]['secret_knowledge']['r'] = r
         return jsonify({'action': 'multiplier', 'r': str(r)})
     if j['action'] == 'prove':
@@ -55,17 +55,29 @@ def secret_knowledge():
         b = session[email]['secret_knowledge']['b']
         r = session[email]['secret_knowledge']['r']
         db.execute('select open_key_x, open_key_y from credentials where email=?;', (email,))
-        x, y = db.fetchone()
+        open_keys = db.fetchone()
+        if open_keys is None:
+            db.execute('insert into auth (email, result) values (?, ?)', (email, 'False'))
+            db.connection.commit()
+            socketio.emit('new_access_request', {'email': email, 'result': 'False'})
+            return jsonify({'action': 'result', 'result': 'False'})
+        x, y = open_keys
         x = bsg.deserializeBraid(x)
         y = bsg.deserializeBraid(y)
 
-        result = (((c/b).is_conjugated(x**r)) | ((y**(-r)*c).is_conjugated(a)))
+        result = (((c/b).is_conjugated(x**r)) and ((y**(-r)*c).is_conjugated(a)))
         if result:
-            db.execute('insert into auth (email) values (?)', (email, ))
+            db.execute('insert into auth (email, result) values (?, ?)', (email, 'True'))
             db.connection.commit()
-            db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
-            if db.fetchone()[0] >= config.threshold:
+            db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes") and result = "True";')
+            accepted = int(db.fetchone()[0])
+            db.execute('select value from params where key="threshold";')
+            threshold = int(db.fetchone()[0])
+            if accepted >= threshold:
                 result = try_access()
+        else:
+            db.execute('insert into auth (email, result) values (?, ?)', (email, 'False'))
+            db.connection.commit()
         socketio.emit('new_access_request', {'email': email, 'result': result})
 
         return jsonify({'action': 'result', 'result': result})
@@ -107,7 +119,7 @@ def create_polynomial(t, S):
     f = R.random_element(t - 1)
     f = f - f % x + S
     return f
-from base64 import b64encode as b64
+
 def try_access():
     try:
         db = sqlite3.connect('db.sqlite').cursor()
@@ -150,14 +162,20 @@ def try_access():
         traceback.print_exc()
         return False
 
-def generate_keys(emails_list_path):
+def generate_keys(emails_list):
     db = sqlite3.connect('db.sqlite').cursor()
-    with open(emails_list_path, 'r') as f:
-        emails = [x[:-1] for x in f.readlines()]
+    if ('.txt' in emails_list):
+        with open(emails_list, 'r') as f:
+            emails = [x[:-1] for x in f.readlines()]
+    else:
+        emails = emails_list.split()
     S = init_secret()
     mk = init_master_key()
     init_open_keys(mk, S)
-    f = create_polynomial(ceil(len(emails) * 0.6), S)
+    threshold = ceil(len(emails) * 0.6)
+    db.execute('insert or replace into params values (?, ?)', ('threshold', str(threshold)))
+    db.connection.commit()
+    f = create_polynomial(threshold, S)
     for e in emails:
         p = config.p
         h = hash(e) % p if hash(e) % p != 0 else 1
@@ -168,7 +186,8 @@ def generate_keys(emails_list_path):
         key_hash = bsg.serializeBraid(key_hash)
         x = bsg.serializeBraid(x)
         y = bsg.serializeBraid(y)
-        db.execute('insert or replace into credentials values (?, ?, ?, ?)', (e, str(int(key)), x, y))
+        db.execute('delete from credentials where email == ?;', (e,))
+        db.execute('insert or replace into credentials values (?, ?, ?, ?);', (e, str(int(key)), x, y))
 
         with open(f'certs/{e}.json', 'w') as c_f:
             json.dump({
@@ -182,10 +201,22 @@ def generate_keys(emails_list_path):
             
     db.connection.commit()
 
+def revocation(emails_list):
+    emails = emails_list.split()
+    db = sqlite3.connect('db.sqlite').cursor()
+    for e in emails:
+        db.execute('delete from credentials where email == ?;', (e, ))
+    db.execute("delete from auth;")
+    db.connection.commit()
+    db.execute('select distinct(email) from credentials;')
+    new_emails_list = ' '.join([r[0] for r in db.fetchall()])
+    generate_keys(new_emails_list)
+
+
 def stat_info_reporter():
     db = sqlite3.connect('db.sqlite').cursor()
     while True:
-        db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
+        db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes") and result = "True";')
         accessed_accounts = db.fetchone()[0]
         socketio.emit('accessed_accounts_number', {'accessed_accounts': accessed_accounts})
         sleep(0.5)
@@ -194,11 +225,13 @@ def stat_info_reporter():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--command", help="command")
-    parser.add_argument("-e", "--emails", help="path to email list file")
+    parser.add_argument("-e", "--emails", help="path to email list file / revocation list")
     args = parser.parse_args()
 
     if args.command == 'generate_keys':
         generate_keys(args.emails)
+    elif args.command == 'revocation':
+        revocation(args.emails)
     else:
         logging.basicConfig(level=logging.INFO,
             format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
