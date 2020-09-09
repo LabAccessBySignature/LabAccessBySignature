@@ -81,22 +81,26 @@ def hash(s):
 
 def init_secret():
     S = random.randint(1, 19)
+    db = sqlite3.connect('db.sqlite').cursor()
     db.execute('insert or replace into params values (?, ?)', ('secret', str(S)))
 
 def init_master_key():
     mk = bsg.randLBElement()
     mk = bsg.serializeBraid(mk)
+    db = sqlite3.connect('db.sqlite').cursor()
     db.execute('insert or replace into params values (?, ?)', ('master_key', str(mk)))
 
 def create_polynomial(t):
     R, x = PolynomialRing(GF(config.p), 'x').objgen()
     f = R.random_element(t - 1)
+    db = sqlite3.connect('db.sqlite').cursor()
     db.execute('select value from params where key = ?', ('secret',))
     S = int(db.fetchone()[0])
     f = f - f % x + S
     return f
 from base64 import b64encode as b64
 def try_access():
+    db = sqlite3.connect('db.sqlite').cursor()
     db.execute('''select
     c.email, secret
     from credentials c
@@ -134,6 +138,7 @@ def try_access():
     requests.post(f"{LAB_SERVER}/auth", json={'msg': msg, 'sign': sign, 'emails': emails})
 
 def generate_keys(emails_list_path):
+    db = sqlite3.connect('db.sqlite').cursor()
     with open(emails_list_path, 'r') as f:
         emails = [x[:-1] for x in f.readlines()]
     init_secret()
@@ -154,6 +159,7 @@ def generate_keys(emails_list_path):
     db.connection.commit()
 
 def stat_info_reporter():
+    db = sqlite3.connect('db.sqlite').cursor()
     db = sqlite3.connect('db.sqlite').cursor()
     while True:
         db.execute('select count(distinct(email)) from auth where current_timestamp < datetime(timestamp,"+60 minutes");')
